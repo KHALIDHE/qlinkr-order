@@ -23,6 +23,24 @@ cd backend
 curl http://localhost:8080/actuator/health
 ```
 
+Set `JWT_SECRET` (32+ characters) and, the first time, `PLATFORM_ADMIN_EMAIL` and
+`PLATFORM_ADMIN_PASSWORD` to create the platform admin.
+
+### API so far
+
+| Method | Path | Who |
+|---|---|---|
+| POST | `/api/auth/login` | anyone, returns a JWT |
+| GET | `/api/auth/me` | any logged-in user |
+| GET, POST | `/api/admin/businesses` | platform admin: list, onboard a business with its owner |
+| GET | `/api/business` | owner and staff of that business |
+| PATCH | `/api/business` | owner |
+| GET, POST | `/api/business/staff` | owner |
+| DELETE | `/api/business/staff/{id}` | owner, staff of their own business only |
+
+The business is always taken from the token, never from the URL. A resource of another
+business answers 404, as if it did not exist ([docs/DECISIONS.md](docs/DECISIONS.md), D5 and D6).
+
 Tests run against a real Oracle and Redis started by Testcontainers:
 
 ```bash
@@ -35,8 +53,8 @@ Whole platform in containers: `docker compose --profile full up --build`.
 |---|---|---|
 | 0 | Current state and plan | done |
 | 1 | Spring Boot skeleton, Docker Compose, Flyway baseline, health endpoint, CI | done |
-| 2 | Businesses, users, roles, JWT login, multi-business isolation | next |
-| 3 | Catalogue in 3 languages, scan points, QR generation | |
+| 2 | Businesses, users, roles, JWT login, multi-business isolation | done |
+| 3 | Catalogue in 3 languages, scan points, QR generation | next |
 | 4 | Ordering: idempotency, stock with optimistic locking, state machine | |
 | 5 | Real-time staff screen | |
 | 6 | Owner dashboard SQL | |
