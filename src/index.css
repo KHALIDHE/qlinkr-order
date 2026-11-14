@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-script: "Caveat", cursive;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --color-cream: #fbf6ee;
+  --color-cream-dim: #f2e8d8;
+  --color-paper: #fffdfa;
+
+  --color-wood-50: #f7ecda;
+  --color-wood-100: #f1e1c6;
+  --color-wood-200: #e3cca0;
+  --color-wood-300: #d3b077;
+  --color-wood-400: #c1935a;
+  --color-wood-500: #a97a45;
+  --color-wood-600: #8a5e30;
+  --color-wood-700: #6b4826;
+  --color-wood-800: #4a331c;
+  --color-wood-900: #2f2113;
+
+  --color-espresso: #241b13;
+  --color-espresso-soft: #4a3c2e;
+
+  --color-brass-300: #e2c88f;
+  --color-brass-400: #cba75c;
+  --color-brass-500: #b28e46;
+  --color-brass-600: #8f7038;
+
+  --color-whatsapp: #25d366;
+  --color-whatsapp-dark: #1da851;
+
+  --shadow-warm: 0 20px 60px -20px rgba(74, 51, 28, 0.35);
+  --shadow-soft: 0 8px 24px -8px rgba(74, 51, 28, 0.2);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-cream);
+  color: var(--color-espresso);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Fine paper-grain texture, laid over the whole page like a printed material. */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+}
+
+.bg-wood-grain {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(74, 51, 28, 0.05) 0px,
+    rgba(74, 51, 28, 0.05) 1px,
+    transparent 1px,
+    transparent 9px
+  );
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  opacity: 0;
+}
+
+.reveal.is-visible {
+  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    animation: none;
+  }
+}
