@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: qlinkr-backend
+
+  # In dev, Spring Boot reads ../compose.yaml, starts Oracle and Redis, and
+  # wires the connection details itself. Tests use Testcontainers instead.
+  docker:
+    compose:
+      file: ../compose.yaml
+      lifecycle-management: start-only
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate   # Flyway owns the schema; Hibernate only checks it
+
+  flyway:
+    locations: classpath:db/migration
+
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-components: always
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: QlinkR Order
+    phase: 1

@@ -1,0 +1,51 @@
+# Local platform. `docker compose up` starts the database and cache.
+# `docker compose --profile full up --build` also builds and runs the API.
+# In dev, `./mvnw spring-boot:run` inside backend/ starts oracle and redis by itself.
+
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim-faststart
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_SYS_PASSWORD:-OraclePass123}
+      APP_USER: ${DB_USER:-qlinkr}
+      APP_USER_PASSWORD: ${DB_PASSWORD:-qlinkr}
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    profiles: ["full"]
+    build: ./backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//oracle:1521/FREEPDB1
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-qlinkr}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-qlinkr}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+    ports:
+      - "8080:8080"
+    depends_on:
+      oracle:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  oracle-data:
