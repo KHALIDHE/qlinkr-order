@@ -22,7 +22,7 @@ class HealthEndpointTest extends IntegrationTest {
         // Flyway creates its table with quoted lower-case names on Oracle.
         Integer applied = jdbc.queryForObject(
             "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"success\" = 1", Integer.class);
-        assertThat(applied).isEqualTo(2);
+        assertThat(applied).isEqualTo(5);
     }
 
     @Test

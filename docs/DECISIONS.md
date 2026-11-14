@@ -32,3 +32,18 @@ One entry per decision: context, choice, reason.
 - **Choice:** answer 404, exactly as if user 42 did not exist.
 - **Reason:** a 403 would confirm that the id exists elsewhere, which leaks information and helps enumeration. 403 is kept for "you are in the right business but your role cannot do this" (staff trying an owner action).
 
+## D7. Optimistic locking for stock, with retry
+- **Context:** two customers can order the last item at the same moment.
+- **Choice:** `@Version` on `item`. Taking stock updates the row only if its version is unchanged; the loser of a race gets a version conflict, reads again (up to 40 attempts with a short random pause) and then sees the real stock.
+- **Reason:** most of the time there is no conflict, so no lock is held. The alternative, pessimistic `SELECT ... FOR UPDATE`, makes every order wait in line on the item row even when stock is plentiful, and holds a lock while the order is built. It would be the better choice if conflicts were the normal case.
+
+## D8. Idempotency key enforced by a unique constraint
+- **Context:** a double tap or a mobile network retry must not create two orders.
+- **Choice:** the phone sends an `Idempotency-Key`; `UNIQUE (business_id, idempotency_key)` makes Oracle refuse a second order, and the API returns the first one (200 instead of 201).
+- **Reason:** a check-then-insert in Java has a race between the check and the insert; the database constraint does not.
+
+## D9. Catalogue cache in Redis, evicted on every change
+- **Context:** the public catalogue is read on every scan and changes rarely.
+- **Choice:** JSON per business and language in Redis with a 10-minute TTL. Every catalogue edit and stock change deletes the business's entries, so the next scan rebuilds them. If Redis is down, the database answers.
+- **Reason:** eviction on write keeps edits visible immediately; the TTL is only a safety net.
+

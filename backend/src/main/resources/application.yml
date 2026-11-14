@@ -26,6 +26,12 @@ qlinkr:
     secret: ${JWT_SECRET:}
     ttl: 8h
     issuer: qlinkr
+  public-base-url: ${PUBLIC_BASE_URL:http://localhost:5173}
+  rate-limit:
+    window: PT1M
+    browse-per-ip: 120
+    orders-per-ip: 10
+    orders-per-scan-point: 30
   bootstrap:
     admin-email: ${PLATFORM_ADMIN_EMAIL:}
     admin-password: ${PLATFORM_ADMIN_PASSWORD:}
@@ -52,4 +58,4 @@ management:
 info:
   app:
     name: QlinkR Order
-    phase: 2
+    phase: 7

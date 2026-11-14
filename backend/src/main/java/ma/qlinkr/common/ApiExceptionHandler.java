@@ -27,6 +27,29 @@ public class ApiExceptionHandler {
         return problem(HttpStatus.CONFLICT, e.getMessage());
     }
 
+    @ExceptionHandler(ma.qlinkr.order.NoLongerAvailableException.class)
+    ProblemDetail noLongerAvailable(ma.qlinkr.order.NoLongerAvailableException e) {
+        ProblemDetail body = problem(HttpStatus.CONFLICT, "Some items are no longer available");
+        body.setProperty("unavailableItemIds", e.itemIds());
+        return body;
+    }
+
+    @ExceptionHandler(ma.qlinkr.order.InvalidTransitionException.class)
+    ProblemDetail invalidTransition(ma.qlinkr.order.InvalidTransitionException e) {
+        return problem(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    ProblemDetail badArgument(IllegalArgumentException e) {
+        return problem(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler({org.springframework.web.method.annotation.HandlerMethodValidationException.class,
+                       org.springframework.web.bind.MissingRequestHeaderException.class})
+    ProblemDetail invalidRequestPart(Exception e) {
+        return problem(HttpStatus.BAD_REQUEST, "Invalid request: " + e.getMessage());
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     ProblemDetail badCredentials(BadCredentialsException e) {
         return problem(HttpStatus.UNAUTHORIZED, e.getMessage());

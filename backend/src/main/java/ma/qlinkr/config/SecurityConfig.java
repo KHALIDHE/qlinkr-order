@@ -35,6 +35,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
+                // WebSocket handshake; subscriptions are checked per frame by StompAuthInterceptor.
+                .requestMatchers("/ws", "/ws/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("PLATFORM_ADMIN")
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth -> oauth

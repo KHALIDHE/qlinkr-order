@@ -38,6 +38,22 @@ Set `JWT_SECRET` (32+ characters) and, the first time, `PLATFORM_ADMIN_EMAIL` an
 | GET, POST | `/api/business/staff` | owner |
 | DELETE | `/api/business/staff/{id}` | owner, staff of their own business only |
 
+| GET, POST, PATCH, DELETE | `/api/catalog/categories`, `/api/catalog/items` | owner |
+| GET, POST, PATCH | `/api/scan-points`, `/{id}/qr.png`, `/{id}/qr.svg`, `/print-sheet` | owner |
+| GET | `/api/public/scan/{code}?lang=ar\|fr\|en` | anyone (catalogue after a scan) |
+| POST | `/api/public/scan/{code}/orders` + `Idempotency-Key` header | anyone (place an order) |
+| GET | `/api/public/orders/{token}` | the customer who holds the token |
+| GET, POST | `/api/orders`, `/api/orders/{id}/status` | owner and staff |
+| GET | `/api/owner/stats/{sales-per-day,best-items,busy-hours,preparation-time}` | owner |
+| WS | `/ws` (STOMP): `/topic/business.{id}.orders`, `/topic/orders.{token}` | staff / customer |
+
+Highlights:
+
+- **Last item:** 100 customers order the last 10 croissants at the same moment. Exactly 10 succeed, 90 get "no longer available", and the stock ends at 0, never negative (`@Version` optimistic locking with retry, see `OrderingTest`).
+- **Double tap:** the phone sends an `Idempotency-Key`; 5 identical requests create 1 order (unique constraint in Oracle).
+- **Lifecycle:** NEW → ACCEPTED → PREPARING → READY → COMPLETED, plus CANCELLED and REJECTED, as a state machine in the `OrderStatus` enum; invalid moves return 409.
+- **Dashboard:** real Oracle SQL with window functions (`RANK() OVER`, moving average, `RATIO_TO_REPORT`, `PERCENTILE_CONT`); query plans in `docs/sql-notes.md`.
+
 The business is always taken from the token, never from the URL. A resource of another
 business answers 404, as if it did not exist ([docs/DECISIONS.md](docs/DECISIONS.md), D5 and D6).
 
@@ -54,12 +70,12 @@ Whole platform in containers: `docker compose --profile full up --build`.
 | 0 | Current state and plan | done |
 | 1 | Spring Boot skeleton, Docker Compose, Flyway baseline, health endpoint, CI | done |
 | 2 | Businesses, users, roles, JWT login, multi-business isolation | done |
-| 3 | Catalogue in 3 languages, scan points, QR generation | next |
-| 4 | Ordering: idempotency, stock with optimistic locking, state machine | |
-| 5 | Real-time staff screen | |
-| 6 | Owner dashboard SQL | |
-| 7 | Caching and rate limiting | |
-| 8 | Load test, measured numbers, deployment plan | |
+| 3 | Catalogue in 3 languages, scan points, QR generation | done |
+| 4 | Ordering: idempotency, stock with optimistic locking, state machine | done |
+| 5 | Real-time staff screen (WebSocket / STOMP) | done |
+| 6 | Owner dashboard SQL | done |
+| 7 | Caching and rate limiting (Redis) | done |
+| 8 | Load test, measured numbers, deployment plan | next |
 
 ## The existing link-page product
 
