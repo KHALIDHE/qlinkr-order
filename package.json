@@ -17,6 +17,7 @@
     "generate:static": "node server/generateAll.js"
   },
   "dependencies": {
+    "@stomp/stompjs": "^7.5.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

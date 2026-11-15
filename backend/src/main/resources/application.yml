@@ -32,6 +32,9 @@ qlinkr:
     browse-per-ip: 120
     orders-per-ip: 10
     orders-per-scan-point: 30
+  demo:
+    enabled: ${DEMO_ENABLED:false}   # creates a demo café with a fixed QR code
+    password: ${DEMO_PASSWORD:}
   bootstrap:
     admin-email: ${PLATFORM_ADMIN_EMAIL:}
     admin-password: ${PLATFORM_ADMIN_PASSWORD:}
