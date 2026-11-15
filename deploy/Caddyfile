@@ -17,3 +17,9 @@
 		file_server
 	}
 }
+
+# AgentGuard runs in its own stack on the same network. Same server, its own address.
+agentguard.{$DOMAIN} {
+	encode gzip
+	reverse_proxy agentguard-web:80
+}
