@@ -3,9 +3,9 @@ import { orderApi, ownerApi, money } from "../order/orderApi";
 
 const itemName = (i) => i.texts?.fr?.name || Object.values(i.texts || {})[0]?.name || "";
 const catName = (c) => c.names?.fr || Object.values(c.names || {})[0] || "";
-const box = "rounded-xl border-2 border-brass-400 bg-paper p-4";
-const input = "rounded border p-2";
-const btn = "rounded bg-espresso px-3 py-1 text-sm text-cream";
+const box = "rounded-2xl border border-wood-200 bg-paper p-4 shadow-sm";
+const input = "rounded-lg border border-wood-200 bg-white p-2.5";
+const btn = "rounded-lg bg-espresso px-3 py-1.5 text-sm font-medium text-cream hover:bg-espresso-soft";
 
 // A QR code image. The server wants the login token, so we download it and show it.
 function QrImage({ token, id }) {
@@ -184,31 +184,36 @@ export default function OwnerPage() {
 
   if (!token) {
     return (
-      <form onSubmit={login} className="mx-auto mt-24 max-w-sm space-y-3 rounded-xl bg-paper p-6 shadow">
-        <h1 className="font-display text-2xl">Owner</h1>
-        <input name="email" type="email" placeholder="Email" required className="w-full rounded border p-2" />
-        <input name="password" type="password" placeholder="Password" required className="w-full rounded border p-2" />
-        {error && <p className="text-sm text-red-700">{error}</p>}
-        <button className="w-full rounded bg-espresso py-2 text-cream">Login</button>
-      </form>
+      <div className="min-h-screen bg-cream px-4 pt-24 font-sans text-espresso">
+        <form onSubmit={login} className="mx-auto max-w-sm space-y-3 rounded-2xl border border-wood-200 bg-paper p-6 shadow-sm">
+          <h1 className="font-display text-3xl">Owner</h1>
+          <p className="text-sm text-espresso-soft">Manage your menu, your tables with their QR codes, and your staff.</p>
+          <input name="email" type="email" placeholder="Email" required className="w-full rounded-lg border border-wood-200 bg-white p-2.5" />
+          <input name="password" type="password" placeholder="Password" required className="w-full rounded-lg border border-wood-200 bg-white p-2.5" />
+          {error && <p className="text-sm text-red-700">{error}</p>}
+          <button className="w-full rounded-lg bg-espresso py-2.5 font-medium text-cream hover:bg-espresso-soft">Login</button>
+        </form>
+      </div>
     );
   }
 
   const Tab = TABS[tab];
   return (
-    <div className="mx-auto max-w-3xl p-4 font-sans text-espresso">
+    <div className="min-h-screen bg-cream font-sans text-espresso">
+    <div className="mx-auto max-w-3xl p-4">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-display text-2xl">My business</h1>
+        <h1 className="font-display text-3xl">My business</h1>
         <button onClick={logout} className="text-sm underline">Logout</button>
       </div>
       <div className="mb-4 flex gap-2">
         {Object.keys(TABS).map((name) => (
           <button key={name} onClick={() => { setTab(name); setError(""); }}
-            className={`rounded px-3 py-1 ${tab === name ? "bg-espresso text-cream" : "bg-cream-dim"}`}>{name}</button>
+            className={`rounded-full px-4 py-1.5 font-medium ${tab === name ? "bg-espresso text-cream" : "bg-cream-dim text-wood-800"}`}>{name}</button>
         ))}
       </div>
       {error && <p className="mb-3 text-sm text-red-700">{error}</p>}
       <Tab token={token} fail={setError} />
+    </div>
     </div>
   );
 }

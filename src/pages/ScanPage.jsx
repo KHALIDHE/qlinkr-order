@@ -18,6 +18,30 @@ const TEXT = {
         COMPLETED: "مكتمل", CANCELLED: "ملغى", REJECTED: "مرفوض" },
 };
 
+const STEPS = ["NEW", "ACCEPTED", "PREPARING", "READY"];
+
+// The four steps of an order, with the current one highlighted. Cancelled and refused orders show in red.
+function Progress({ status, t }) {
+  if (status === "CANCELLED" || status === "REJECTED") {
+    return <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-800">{t[status]}</p>;
+  }
+  const at = status === "COMPLETED" ? STEPS.length : STEPS.indexOf(status);
+  return (
+    <ol className="mt-3 flex items-start">
+      {STEPS.map((s, i) => (
+        <li key={s} className="flex flex-1 flex-col items-center text-center">
+          <div className="flex w-full items-center">
+            <span className={`h-0.5 flex-1 ${i === 0 ? "bg-transparent" : i <= at ? "bg-brass-400" : "bg-cream-dim"}`} />
+            <span className={`h-4 w-4 rounded-full ${i <= at ? "bg-brass-400" : "bg-cream-dim"} ${i === at ? "ring-4 ring-brass-300/60" : ""}`} />
+            <span className={`h-0.5 flex-1 ${i === STEPS.length - 1 ? "bg-transparent" : i < at ? "bg-brass-400" : "bg-cream-dim"}`} />
+          </div>
+          <span className={`mt-1 text-xs leading-tight ${i <= at ? "font-medium text-espresso" : "text-espresso-soft/60"}`}>{t[s]}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 // One card per order. It loads the current status once, then follows that order live,
 // so every order keeps its own status, whatever the other orders do.
 function OrderCard({ order, number, t, onStatus }) {
@@ -27,11 +51,12 @@ function OrderCard({ order, number, t, onStatus }) {
   }, [order.token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="mb-3 rounded-xl border-2 border-brass-400 bg-paper p-4">
+    <div className="mb-3 rounded-2xl border border-wood-200 bg-paper p-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <b>{t.orderN} #{number}</b>
-        <span className="font-display text-xl">{t[order.status]}</span>
+        <b className="font-display text-lg">{t.orderN} #{number}</b>
+        <span className="rounded-full bg-cream-dim px-3 py-1 text-sm font-medium text-wood-800">{t[order.status]}</span>
       </div>
+      <Progress status={order.status} t={t} />
       <ul className="my-2 text-sm text-espresso-soft">
         {order.lines.map((l) => <li key={l.itemId}>{l.quantity} × {l.name}</li>)}
       </ul>
@@ -69,6 +94,7 @@ export default function ScanPage() {
   const items = (data?.categories || []).flatMap((c) => c.items);
   const lines = Object.entries(cart).filter(([, q]) => q > 0).map(([itemId, quantity]) => ({ itemId: Number(itemId), quantity }));
   const total = lines.reduce((sum, l) => sum + l.quantity * items.find((i) => i.id === l.itemId).priceCents, 0);
+  const count = lines.reduce((sum, l) => sum + l.quantity, 0);
 
   const change = (id, delta) => {
     key.current = crypto.randomUUID(); // a different cart is a different order
@@ -145,7 +171,7 @@ export default function ScanPage() {
         {error && <p className="mb-2 text-center text-sm text-red-700">{error}</p>}
         <button disabled={!lines.length || sending} onClick={send}
           className="w-full rounded-xl bg-espresso py-3 text-lg text-cream disabled:opacity-40">
-          {sending ? t.sending : lines.length ? `${t.order} · ${money(total)}` : t.pick}
+          {sending ? t.sending : lines.length ? `${t.order} · ${count} · ${money(total)}` : t.pick}
         </button>
       </div>
     </div>
