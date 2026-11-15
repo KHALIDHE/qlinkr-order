@@ -1,0 +1,19 @@
+# {$DOMAIN} comes from deploy/.env. Caddy gets and renews the HTTPS certificate by itself.
+{$DOMAIN} {
+	encode gzip
+
+	# API and WebSocket go to the Spring Boot backend.
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+	handle /ws* {
+		reverse_proxy backend:8080
+	}
+
+	# Everything else is the React site; unknown paths fall back to index.html (client-side routes).
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

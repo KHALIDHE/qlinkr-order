@@ -1,0 +1,80 @@
+# Production stack: Oracle, Redis, the Spring Boot backend and a web server (Caddy) that
+# serves the website and gives HTTPS. Run from the repository root:
+#
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env up -d --build
+#
+# Only the web server publishes ports (80 and 443). Everything else stays on the private
+# Docker network.
+
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim-faststart
+    restart: unless-stopped
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_SYS_PASSWORD:?set ORACLE_SYS_PASSWORD in deploy/.env}
+      APP_USER: qlinkr
+      APP_USER_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in deploy/.env}
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 90s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    depends_on:
+      oracle:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx768m"
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//oracle:1521/FREEPDB1
+      SPRING_DATASOURCE_USERNAME: qlinkr
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in deploy/.env}
+      PUBLIC_BASE_URL: https://${DOMAIN}
+      QLINKR_WEBSOCKET_ALLOWED_ORIGINS: https://${DOMAIN}
+      # Behind Caddy the client IP arrives in X-Forwarded-For; the rate limiter needs the real IP.
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+      DEMO_ENABLED: "true"
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?set DEMO_PASSWORD in deploy/.env}
+      PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL}
+      PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD}
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in deploy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  oracle-data:
+  caddy-data:
+  caddy-config:
