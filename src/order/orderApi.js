@@ -43,6 +43,34 @@ export const orderApi = {
     }),
 };
 
+// Calls for the owner page: menu, tables with their QR codes, and staff accounts.
+const call = (token, path, method = "GET", body) =>
+  request(path, { method, headers: bearer(token), body: body ? JSON.stringify(body) : undefined });
+
+// Images and the print sheet need the login token, so we download them and show them from memory.
+export const ownerApi = {
+  categories: (t) => call(t, "/api/catalog/categories"),
+  addCategory: (t, name) => call(t, "/api/catalog/categories", "POST", { names: { fr: name, en: name, ar: name } }),
+  items: (t) => call(t, "/api/catalog/items"),
+  addItem: (t, categoryId, name, priceCents) =>
+    call(t, "/api/catalog/items", "POST", {
+      categoryId, priceCents,
+      texts: { fr: { name }, en: { name }, ar: { name } },
+    }),
+  patchItem: (t, id, patch) => call(t, `/api/catalog/items/${id}`, "PATCH", patch),
+  deleteItem: (t, id) => call(t, `/api/catalog/items/${id}`, "DELETE"),
+  scanPoints: (t) => call(t, "/api/scan-points"),
+  addScanPoint: (t, label, kind) => call(t, "/api/scan-points", "POST", { label, kind }),
+  staff: (t) => call(t, "/api/business/staff"),
+  addStaff: (t, email, password) => call(t, "/api/business/staff", "POST", { email, password }),
+  removeStaff: (t, id) => call(t, `/api/business/staff/${id}`, "DELETE"),
+  file: async (t, path) => {
+    const res = await fetch(path, { headers: bearer(t) });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    return res.blob();
+  },
+};
+
 // Opens a WebSocket, listens to one topic, calls onMessage for each update. Returns a "stop" function.
 export function listen(topic, onMessage, token) {
   const scheme = window.location.protocol === "https:" ? "wss" : "ws";

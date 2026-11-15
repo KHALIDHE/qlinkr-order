@@ -4,6 +4,7 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import ScanPage from "./pages/ScanPage";
 import StaffPage from "./pages/StaffPage";
+import OwnerPage from "./pages/OwnerPage";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Route path="/admin" element={<Admin />} />
       <Route path="/s/:code" element={<ScanPage />} />
       <Route path="/staff" element={<StaffPage />} />
+      <Route path="/owner" element={<OwnerPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

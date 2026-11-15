@@ -60,26 +60,29 @@ export default function StaffPage() {
       </div>
       {error && <p className="mb-2 text-sm text-red-700">{error}</p>}
       {orders.length === 0 && <p className="text-espresso-soft">No open order.</p>}
-      <div className="grid gap-3 sm:grid-cols-2">
-        {orders.map((o) => (
-          <div key={o.id} className="rounded-xl border-2 border-brass-400 bg-paper p-4">
-            <div className="flex justify-between">
-              <b>#{o.id} · {o.scanPointLabel}</b>
-              <span className="rounded bg-cream-dim px-2 text-sm">{o.status}</span>
+            {[...new Set(orders.map((o) => o.scanPointLabel))].map((table) => (
+        <div key={table} className="mb-4 rounded-xl border-2 border-brass-400 p-4">
+          <h2 className="mb-3 font-display text-xl">{table}</h2>
+          {orders.filter((o) => o.scanPointLabel === table).map((o) => (
+            <div key={o.id} className="mb-3 rounded-xl border bg-paper p-4">
+              <div className="flex justify-between">
+                <b>#{o.id}</b>
+                <span className="rounded bg-cream-dim px-2 text-sm">{o.status}</span>
+              </div>
+              <ul className="my-2 text-sm">
+                {o.lines.map((l) => <li key={l.itemId}>{l.quantity} × {l.name}</li>)}
+              </ul>
+              <p className="mb-2 text-sm text-espresso-soft">{money(o.totalCents)}</p>
+              <div className="flex flex-wrap gap-2">
+                {o.allowedNext.map((to) => (
+                  <button key={to} onClick={() => move(o.id, to)}
+                    className="rounded bg-espresso px-3 py-1 text-sm text-cream">{to}</button>
+                ))}
+              </div>
             </div>
-            <ul className="my-2 text-sm">
-              {o.lines.map((l) => <li key={l.itemId}>{l.quantity} × {l.name}</li>)}
-            </ul>
-            <p className="mb-2 text-sm text-espresso-soft">{money(o.totalCents)}</p>
-            <div className="flex flex-wrap gap-2">
-              {o.allowedNext.map((to) => (
-                <button key={to} onClick={() => move(o.id, to)}
-                  className="rounded bg-espresso px-3 py-1 text-sm text-cream">{to}</button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
