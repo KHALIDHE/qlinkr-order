@@ -4,19 +4,41 @@ import { orderApi, listen, money } from "../order/orderApi";
 
 // Every text on this page, in the three languages of the platform.
 const TEXT = {
-  fr: { total: "Total", order: "Commander", sending: "Envoi...", pick: "Choisissez des articles",
+  fr: { orderN: "Commande", myOrders: "Mes commandes", total: "Total", order: "Commander", sending: "Envoi...", pick: "Choisissez des articles",
         soldOut: "Épuisé", fewLeft: "Dernières pièces", status: "Statut de votre commande", unknown: "QR code inconnu",
         NEW: "Reçue", ACCEPTED: "Acceptée", PREPARING: "En préparation", READY: "Prête !",
         COMPLETED: "Terminée", CANCELLED: "Annulée", REJECTED: "Refusée" },
-  en: { total: "Total", order: "Order", sending: "Sending...", pick: "Pick some items",
+  en: { orderN: "Order", myOrders: "My orders", total: "Total", order: "Order", sending: "Sending...", pick: "Pick some items",
         soldOut: "Sold out", fewLeft: "Last ones", status: "Your order status", unknown: "Unknown QR code",
         NEW: "Received", ACCEPTED: "Accepted", PREPARING: "Preparing", READY: "Ready!",
         COMPLETED: "Completed", CANCELLED: "Cancelled", REJECTED: "Rejected" },
-  ar: { total: "المجموع", order: "اطلب", sending: "جارٍ الإرسال...", pick: "اختر بعض العناصر",
+  ar: { orderN: "الطلب", myOrders: "طلباتي", total: "المجموع", order: "اطلب", sending: "جارٍ الإرسال...", pick: "اختر بعض العناصر",
         soldOut: "نفد", fewLeft: "الكمية الأخيرة", status: "حالة طلبك", unknown: "رمز QR غير معروف",
         NEW: "تم الاستلام", ACCEPTED: "تم القبول", PREPARING: "قيد التحضير", READY: "جاهز!",
         COMPLETED: "مكتمل", CANCELLED: "ملغى", REJECTED: "مرفوض" },
 };
+
+// One card per order. It loads the current status once, then follows that order live,
+// so every order keeps its own status, whatever the other orders do.
+function OrderCard({ order, number, t, onStatus }) {
+  useEffect(() => {
+    orderApi.order(order.token).then((o) => onStatus(order.token, o.status)).catch(() => {});
+    return listen(`/topic/orders.${order.token}`, (o) => onStatus(order.token, o.status));
+  }, [order.token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="mb-3 rounded-xl border-2 border-brass-400 bg-paper p-4">
+      <div className="flex items-center justify-between">
+        <b>{t.orderN} #{number}</b>
+        <span className="font-display text-xl">{t[order.status]}</span>
+      </div>
+      <ul className="my-2 text-sm text-espresso-soft">
+        {order.lines.map((l) => <li key={l.itemId}>{l.quantity} × {l.name}</li>)}
+      </ul>
+      <p className="text-sm">{money(order.totalCents)}</p>
+    </div>
+  );
+}
 
 export default function ScanPage() {
   const { code } = useParams();
@@ -24,7 +46,10 @@ export default function ScanPage() {
   const [data, setData] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [cart, setCart] = useState({}); // itemId -> quantity
-  const [order, setOrder] = useState(null); // { token, status }
+  const storageKey = `qo_orders_${code}`;
+  const [orders, setOrders] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch { return []; }
+  });
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const key = useRef(crypto.randomUUID()); // Idempotency-Key of the current cart
@@ -34,11 +59,11 @@ export default function ScanPage() {
 
   useEffect(() => { load(); }, [code, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Live status of my order, pushed by the server over WebSocket.
-  useEffect(() => {
-    if (!order?.token) return undefined;
-    return listen(`/topic/orders.${order.token}`, (o) => setOrder((prev) => ({ ...prev, status: o.status })));
-  }, [order?.token]);
+  // Keep my orders in the browser, so a refresh does not lose them.
+  useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(orders)); }, [orders, storageKey]);
+
+  const setStatus = (token, status) =>
+    setOrders((list) => list.map((o) => (o.token === token ? { ...o, status } : o)));
 
   const t = TEXT[data?.lang] || TEXT.fr;
   const items = (data?.categories || []).flatMap((c) => c.items);
@@ -55,7 +80,7 @@ export default function ScanPage() {
     setError("");
     try {
       const placed = await orderApi.placeOrder(code, key.current, lines);
-      setOrder({ token: placed.token, status: placed.status });
+      setOrders((list) => [placed, ...list]); // newest first
       setCart({});
     } catch (e) {
       setError(e.message);
@@ -83,11 +108,13 @@ export default function ScanPage() {
         </div>
       </header>
 
-      {order && (
-        <div className="m-4 rounded-xl border-2 border-brass-400 bg-paper p-4 text-center">
-          <p className="text-sm text-espresso-soft">{t.status}</p>
-          <p className="font-display text-3xl">{t[order.status]}</p>
-        </div>
+      {orders.length > 0 && (
+        <section className="p-4 pb-0">
+          <h2 className="mb-2 font-display text-xl text-wood-700">{t.myOrders}</h2>
+          {orders.map((o, i) => (
+            <OrderCard key={o.token} order={o} number={orders.length - i} t={t} onStatus={setStatus} />
+          ))}
+        </section>
       )}
 
       {data.categories.map((c) => (

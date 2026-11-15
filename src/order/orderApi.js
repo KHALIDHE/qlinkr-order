@@ -29,6 +29,8 @@ export const orderApi = {
       body: JSON.stringify({ lines }),
     }),
 
+  order: (token) => request(`/api/public/orders/${token}`),
+
   login: (email, password) =>
     request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   me: (token) => request("/api/auth/me", { headers: bearer(token) }),
